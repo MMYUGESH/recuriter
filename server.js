@@ -21,7 +21,7 @@ app.get('/', async (req, res) => {
 
     try {
         let clientInfo = await mongoClient.connect(dbUrl);
-        let db = clientInfo.db("recruiter");
+        let db = clientInfo.db("recuriter");
         let data = await db.collection("users").find().project({ password: 0 }).toArray();
         res.status(200).json(data);
         clientInfo.close();
