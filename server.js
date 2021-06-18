@@ -35,15 +35,21 @@ app.post('/signup', async (req, res) => {
     try {
         let clientInfo = await mongoClient.connect(dbUrl);
         let db = clientInfo.db("recuriter");
-        let found = await db.collection("users").findOne({ email: req.body.email });
-        if (found) {
-            res.status(400).json({ message: "user already exists" })
+
+        if (req.body.position === "recuriter") {
+            let found = await db.collection("users").findOne({ email: req.body.email });
+            if (found) {
+                res.status(400).json({ message: "user already exists" })
+            } else {
+                let salt = await bcrypt.genSalt(10);
+                let hash = await bcrypt.hash(req.body.password, salt);
+                req.body.password = hash;
+                await db.collection('users').insertOne(req.body);
+                res.status(200).json({ message: "user registered" });
+
+            }
         } else {
-            let salt = await bcrypt.genSalt(10);
-            let hash = await bcrypt.hash(req.body.password, salt);
-            req.body.password = hash;
-            await db.collection('users').insertOne(req.body);
-            res.status(200).json({ message: "user registered" });
+            res.status(400).json({ message: "Signup is for recuriters" })
 
         }
         clientInfo.close();
@@ -57,27 +63,22 @@ app.post('/login', async (req, res) => {
     try {
         let clientInfo = await mongoClient.connect(dbUrl);
         let db = clientInfo.db("recuriter");
-        let role = await db.collection("users").findOne({ position: req.body.position });
-        console.log(role)
-        if (role.position === "recuriter") {
-            let found = await db.collection("users").findOne({ email: req.body.email });
+        let found = await db.collection("users").findOne({ email: req.body.email });
 
-            if (found) {
-                let isValid = await bcrypt.compare(req.body.password, found.password)
-                if (isValid) {
-                    //OK
-                    res.status(200).json({ message: "login successful" })
-                } else {
-                    //401 Unauthorized
-                    res.status(401).json({ message: "login Unsuccessful" })
-                }
+        if (found) {
+            let isValid = await bcrypt.compare(req.body.password, found.password)
+            if (isValid) {
+                //OK
+                res.status(200).json({ message: "login successful" })
             } else {
-
-                res.status(404).json({ message: "user not registered" })
+                //401 Unauthorized
+                res.status(401).json({ message: "login Unsuccessful" })
             }
         } else {
-            res.status(400).json({ message: "user is not a  recuriter" })
+
+            res.status(404).json({ message: "user not registered" })
         }
+
         clientInfo.close();
     }
     catch (error) {
