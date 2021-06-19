@@ -36,22 +36,18 @@ app.post('/signup', async (req, res) => {
         let clientInfo = await mongoClient.connect(dbUrl);
         let db = clientInfo.db("recuriter");
 
-        if (req.body.position === "recuriter") {
-            let found = await db.collection("users").findOne({ email: req.body.email });
-            if (found) {
-                res.status(400).json({ message: "user already exists" })
-            } else {
-                let salt = await bcrypt.genSalt(10);
-                let hash = await bcrypt.hash(req.body.password, salt);
-                req.body.password = hash;
-                await db.collection('users').insertOne(req.body);
-                res.status(200).json({ message: "user registered" });
-
-            }
+        let found = await db.collection("users").findOne({ email: req.body.email });
+        if (found) {
+            res.status(400).json({ message: "user already exists" })
         } else {
-            res.status(400).json({ message: "Signup is for recuriters" })
+            let salt = await bcrypt.genSalt(10);
+            let hash = await bcrypt.hash(req.body.password, salt);
+            req.body.password = hash;
+            await db.collection('users').insertOne(req.body);
+            res.status(200).json({ message: "user registered" });
 
         }
+
         clientInfo.close();
     }
     catch (error) {
